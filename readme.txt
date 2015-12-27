@@ -1,3 +1,2 @@
-v = "0.01"
+v = "0.02"
 
-самая erg bsert beautiful_dog и

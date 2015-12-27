@@ -3,10 +3,11 @@
 
 import sys
 import chardet
+import codecs
 from textblob import TextBlob, exceptions
 import re
 
-PRINT_DEBUGGING_INFORMATION = 0
+PRINT_DEBUGGING_INFORMATION = 1
 if not PRINT_DEBUGGING_INFORMATION:
     def print(*args, **kwargs):
         pass
@@ -17,14 +18,13 @@ if start_num != end_num:
     sys.stdout.write("you need to select only one line")
     sys.exit(1)
 
-
-
 if not select_text:
     sys.stdout.write("no text selected")
     sys.exit(1)
 
 SEP = "_"
 EXCLUDING_WORDS = ("a", "the", "is", "it")
+
 
 def detect_coding(line, ignore_reliability=False):
     """
@@ -51,14 +51,16 @@ def format_text(text, for_removing, sep="_"):
     p = r'\s*\b({})?\b\s+'.format("|".join(for_removing))
     return re.sub(p, "_", text, flags=re.IGNORECASE)
 
+
 def translate_line(text):
     blob = TextBlob(" ".join(select_text))
     try:
-         translate_text = str(blob.translate(to="en"))
+        translate_text = str(blob.translate(to="en"))
     except exceptions.NotTranslated as i:
         sys.stdout.write("TextBlob: {}".format(i))
         sys.exit(1)
-    else: return translate_text
+    else:
+        return translate_text
 
 
 def get_str_from_file(path):
@@ -67,7 +69,7 @@ def get_str_from_file(path):
 
 
 def lines_from_file(path):
-    with open(path, "r", encoding='1251') as f:
+    with open(path, "r", encoding=sys.stdout.encoding) as f:
         return f.readlines()
 
 
@@ -87,11 +89,8 @@ def get_line(lines, num):
     line = re.sub('\s+', " ", lines[int(num) - 1])
     return line
 
+
 def decode_text(s, enc="utf-8", dec="1251"):
-    if dec == enc:
-        print("!!!!!!!!!!!!!!")
-        return s
-    else:
         return s.encode(enc).decode(dec)
 
 
@@ -101,17 +100,20 @@ def list_to_decode_line(lst, enc="utf-8", dec="1251"):
     :param lst:
     :return: str
     """
+    if codecs.lookup(dec).name == enc:
+        decode_lst = [decode_text(w, enc, dec) for w in lst]
+    else:
+        decode_lst = lst
 
-    return " ".join([decode_text(w, enc, dec) for w in lst])
+    return " ".join(decode_lst)
+
 
 s = get_str_from_file(file)
 
-
-select_line_str = list_to_decode_line(select_text, enc="utf-8", dec="1251")
-
+select_line_str = list_to_decode_line(select_text, enc="utf-8",
+                                      dec=sys.stdout.encoding)
 
 print("select_line_str", select_line_str, sep=": --> ")
-
 
 translate_text = translate_line(select_line_str)
 print("translate_text", translate_text, sep=": --> ")
