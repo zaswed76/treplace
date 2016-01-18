@@ -130,4 +130,6 @@ print("new_line", new_line, sep=": --> ")
 lines_file[int(start_num) - 1] = new_line
 
 write_lines(file, lines_file)
-a
+
+
+cat 
