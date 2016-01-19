@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import re
 import json
@@ -70,13 +71,10 @@ def list_to_decode_line(lst, enc="utf-8", dec="1251"):
     return " ".join(decode_lst)
 
 
-def translate(text, from_on):
+def translate(yandex_key, url, text, from_on):
     text = text.rstrip("\n")
-    url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?'
-    key = 'trnsl.1.1.20160118T034046Z.e27999dc29670d9f.efb20585c9571f33a2ae818e936e415a8f5ff6e6'
-    r = requests.post(url, data={'key': key, 'text': text,
+    r = requests.post(url, data={'key': yandex_key, 'text': text,
                                  'lang': from_on})
-
     return json.loads(r.text)["text"][0]
 
 
@@ -132,7 +130,7 @@ def main(translation_opt, sep, excluding_words, yandex_key, url):
 
     select_text_str = " ".join(select_text_lst)
 
-    translate_text = translate(select_text_str, "ru-en")
+    translate_text = translate(yandex_key, url, select_text_str, translation_opt)
 
     # переведённый отформатированый текст
     formatted_text = format_text(translate_text, excluding_words,
@@ -146,8 +144,9 @@ def main(translation_opt, sep, excluding_words, yandex_key, url):
 
 
 if __name__ == '__main__':
-    config_file = "config"
-    config = get_conf( config_file)
+    root = os.path.abspath(os.path.dirname(__file__))
+    config_file = os.path.join(root, "conf.json")
+    config = get_conf(config_file)
     translation_opt = config["translation_opt"]
     sep = config["sep"]
     excluding_words = config["excluding_words"]
