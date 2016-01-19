@@ -107,25 +107,27 @@ lines_lst = lines_from_file(file)
 # получить строку в которой выделили
 line_str = get_line(lines_lst, start_num)
 
-# подготовленная декодированная если надо строка для перевода
-_original_selected_text = list_to_decode_line(select_text, enc="utf-8",
-                                              dec=sys.stdout.encoding)
+print(lines_lst)
 
-
-
-# переведёнаая строка
-target = translate(_original_selected_text, "ru-en")
-
-# форматированная строка
-finish_text = format_text(target, EXCLUDING_WORDS, sep=SEP)
-
-_original_selected_text = decode_text(_original_selected_text)
-print(translate(_original_selected_text, "ru-en"))
-print(_original_selected_text)
-new_line = re.sub(_original_selected_text, finish_text, line_str) + "\n"
-
-lines_lst[int(start_num) - 1] = new_line
-
-
-
-write_lines(file, lines_lst)
+# # подготовленная декодированная если надо строка для перевода
+# _original_selected_text = list_to_decode_line(select_text, enc="utf-8",
+#                                               dec=sys.stdout.encoding)
+#
+#
+#
+# # переведёнаая строка
+# target = translate(_original_selected_text, "ru-en")
+#
+# # форматированная строка
+# finish_text = format_text(target, EXCLUDING_WORDS, sep=SEP)
+#
+# _original_selected_text = decode_text(_original_selected_text)
+# print(translate(_original_selected_text, "ru-en"))
+# print(_original_selected_text)
+# new_line = re.sub(_original_selected_text, finish_text, line_str) + "\n"
+#
+# lines_lst[int(start_num) - 1] = new_line
+#
+#
+#
+# write_lines(file, lines_lst)
