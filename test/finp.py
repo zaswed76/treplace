@@ -18,7 +18,8 @@ def arg_parse():
     parser.add_argument("select_text_lst", nargs='+', type=str,
                         help="список выделенных слов")
     parser.add_argument('-m', '--multi', action='store_true',
-                        default=False, help="если указан этот ключ то возможно выделение текста в нескольких строках")
+                        default=False,
+                        help="если указан этот ключ то возможно выделение текста в нескольких строках")
     return parser.parse_args()
 
 

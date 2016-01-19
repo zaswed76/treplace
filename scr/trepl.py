@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import re
-import json
-import codecs
-
 import argparse
+import codecs
+import json
+import os
+import re
+import sys
+
 import requests
-
-
 
 
 def arg_parse():
@@ -35,6 +33,7 @@ def arg_parse():
 def get_conf(path):
     with open(path, "r") as obj:
         return json.load(obj)
+
 
 def lines_from_file(path):
     with open(path, "r", encoding=sys.stdout.encoding) as f:
@@ -130,7 +129,8 @@ def main(translation_opt, sep, excluding_words, yandex_key, url):
 
     select_text_str = " ".join(select_text_lst)
 
-    translate_text = translate(yandex_key, url, select_text_str, translation_opt)
+    translate_text = translate(yandex_key, url, select_text_str,
+                               translation_opt)
 
     # переведённый отформатированый текст
     formatted_text = format_text(translate_text, excluding_words,
