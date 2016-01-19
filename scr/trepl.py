@@ -6,31 +6,39 @@ import re
 import json
 import codecs
 
-import chardet
+import argparse
 import requests
 
-SEP = "_"
-EXCLUDING_WORDS = ("a", "the", "is", "it")
 
-def get_data_api(arg):
-    """
 
-    :return: ('path', 'start_line', 'end_line', ['select_text'])
-    """
-    file, start_num, end_num = arg[1:4]
-    select_text = arg[4:]
-    if start_num != end_num:
-        sys.stdout.write("you need to select only one line")
-        sys.exit(1)
-    if not select_text:
-        sys.stdout.write("no text selected")
-        sys.exit(1)
-    return file, start_num, end_num, select_text
 
+def arg_parse():
+    parser = argparse.ArgumentParser(
+            description='''
+                переводит и заменяет выделенный текст;
+            аргументы получает из api редактора (Pycharm)''')
+    parser.add_argument("file_path", type=str,
+                        help="полный путь к текущему файлу")
+    parser.add_argument("start_select", type=str,
+                        help="начало выделения")
+    parser.add_argument("end_select", type=str,
+                        help="конец выделения")
+    parser.add_argument("select_text_lst", nargs='+', type=str,
+                        help="список выделенных слов")
+    parser.add_argument('-m', '--multi', action='store_true',
+                        default=False,
+                        help="если указан этот ключ то возможно выделение текста в нескольких строках")
+    return parser.parse_args()
+
+
+def get_conf(path):
+    with open(path, "r") as obj:
+        return json.load(obj)
 
 def lines_from_file(path):
     with open(path, "r", encoding=sys.stdout.encoding) as f:
         return f.readlines()
+
 
 def get_line(lines, num):
     """
@@ -42,8 +50,9 @@ def get_line(lines, num):
     line = re.sub('\s+', " ", lines[int(num) - 1])
     return line
 
+
 def decode_text(s, enc="utf-8", dec="1251"):
-        return s.encode(enc).decode(dec)
+    return s.encode(enc).decode(dec)
 
 
 def list_to_decode_line(lst, enc="utf-8", dec="1251"):
@@ -60,74 +69,88 @@ def list_to_decode_line(lst, enc="utf-8", dec="1251"):
 
     return " ".join(decode_lst)
 
+
 def translate(text, from_on):
     text = text.rstrip("\n")
     url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?'
     key = 'trnsl.1.1.20160118T034046Z.e27999dc29670d9f.efb20585c9571f33a2ae818e936e415a8f5ff6e6'
-    r = requests.post(url, data={'key': key, 'text': text, 'lang': from_on})
-    print(r.text)
+    r = requests.post(url, data={'key': key, 'text': text,
+                                 'lang': from_on})
+
     return json.loads(r.text)["text"][0]
+
 
 def format_text(text, for_removing, sep="_"):
     p = r'\s*\b({})?\b\s+'.format("|".join(for_removing))
     return re.sub(p, "_", text, flags=re.IGNORECASE)
 
-def write_lines(file, lines):
-    if lines:
+
+def write_to_file(file, lst):
+    if lst:
         with open(file, "w") as f:
-            f.writelines(lines)
+            f.writelines(lst)
 
-def detect_coding(line, ignore_reliability=False):
+
+def modified_list(lst, num, old, new):
     """
-     определяет кодировку строки
-    :param line:
-    :param ignore_reliability:
-    :return: str or None (если кодировка не определена достоверно)
+
+    :param lst: исходный список строк
+    :param num: индекс строки для замены
+    :param old: выделенныи текс
+    :param new: переведённый текст
+    :return: изменённый список строк
     """
-    line = line[0:200]
-    print(line, "!!!")
-    source_coding = chardet.detect(line)["encoding"]
-    confidence = chardet.detect(line)["confidence"]
-    if ignore_reliability:
-        return source_coding
-    elif confidence > 0.5:
-        return source_coding
+    line_str = get_line(lst, num)
+    new_str = line_str.replace(old, new) + "\n"
+    lst[int(num) - 1] = new_str
+    return lst
+
+
+def do_one_line_selected(start, end):
+    if start != end:
+        sys.stdout.write("you need to select only one line")
+        sys.exit(1)
+
+
+def main(translation_opt, sep, excluding_words, yandex_key, url):
+    """
+    получить:  файл, строку нач., строку кон., выделенный текст > [str, str]
+    :return:
+    """
+    name_arg = arg_parse()
+    file = name_arg.file_path
+    num_selected_line = name_arg.start_select
+    end_select = name_arg.end_select
+    select_text_lst = name_arg.select_text_lst
+    multi_select = name_arg.multi
+
+    # выбрана ли одна линия
+    if not multi_select:
+        do_one_line_selected(num_selected_line, end_select)
     else:
-        print(
-            "кодировка определена не достоверно - {}".format(
-                confidence))
-        return None
+        raise Exception("пока эта ветка не работет")
 
-# получить файл, строку нач., строку кон., выделенный текст > [str, str]
-file, start_num, end_num, select_text = get_data_api(sys.argv)
+    select_text_str = " ".join(select_text_lst)
 
-# получить строки файла в список
-lines_lst = lines_from_file(file)
+    translate_text = translate(select_text_str, "ru-en")
 
-# получить строку в которой выделили
-line_str = get_line(lines_lst, start_num)
+    # переведённый отформатированый текст
+    formatted_text = format_text(translate_text, excluding_words,
+                                 sep=sep)
+    # прочитать файл в список
+    lst_from_file = lines_from_file(file)
+    # произвести замену в списке полученном из файла
+    modified_lst = modified_list(lst_from_file, num_selected_line,
+                                 select_text_str, formatted_text)
+    write_to_file(file, modified_lst)
 
-print(lines_lst)
 
-# # подготовленная декодированная если надо строка для перевода
-# _original_selected_text = list_to_decode_line(select_text, enc="utf-8",
-#                                               dec=sys.stdout.encoding)
-#
-#
-#
-# # переведёнаая строка
-# target = translate(_original_selected_text, "ru-en")
-#
-# # форматированная строка
-# finish_text = format_text(target, EXCLUDING_WORDS, sep=SEP)
-#
-# _original_selected_text = decode_text(_original_selected_text)
-# print(translate(_original_selected_text, "ru-en"))
-# print(_original_selected_text)
-# new_line = re.sub(_original_selected_text, finish_text, line_str) + "\n"
-#
-# lines_lst[int(start_num) - 1] = new_line
-#
-#
-#
-# write_lines(file, lines_lst)
+if __name__ == '__main__':
+    config_file = "config"
+    config = get_conf( config_file)
+    translation_opt = config["translation_opt"]
+    sep = config["sep"]
+    excluding_words = config["excluding_words"]
+    yandex_key = config["key"]
+    url = config["url"]
+    main(translation_opt, sep, excluding_words, yandex_key, url)

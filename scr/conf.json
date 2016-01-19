@@ -1,0 +1,7 @@
+{
+  "translation_opt": "ru-en",
+  "sep": "_",
+  "excluding_words": ["a", "the", "is", "it"],
+  "url": "https://translate.yandex.net/api/v1.5/tr.json/translate?",
+  "key": "trnsl.1.1.20160118T034046Z.e27999dc29670d9f.efb20585c9571f33a2ae818e936e415a8f5ff6e6"
+}
